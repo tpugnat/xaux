@@ -31,14 +31,14 @@ def exit_handler():
 atexit.register(exit_handler)
 
 # This one should handle those exceptions.
-def kill_handler(signum, frame):
-    exit_handler()
-    print(f"\n\nTraceback (most recent call last):")
-    traceback.print_stack(frame)
-    print(f"{signal.Signals(signum).name}: [Errno {signum}] A signal has been raised.")
-    sys.exit(0)
-signal.signal(signal.SIGINT, kill_handler)
-signal.signal(signal.SIGTERM, kill_handler)
+# def kill_handler(signum, frame):
+#     exit_handler()
+#     print(f"\n\nTraceback (most recent call last):")
+#     traceback.print_stack(frame)
+#     print(f"{signal.Signals(signum).name}: [Errno {signum}] A signal has been raised.")
+#     sys.exit(0)
+# signal.signal(signal.SIGINT, kill_handler)
+# signal.signal(signal.SIGTERM, kill_handler)
 
 def get_hash(filename, size=128):
     """Get a fast hash of a file, in chunks of 'size' (in kb)"""
@@ -248,34 +248,34 @@ class ProtectFile:
                 # An error happen while trying to generate the Lockfile. This raise an 
                 # OSError: [Errno 5] Input/output error!
                 self._wait(wait)
-                if self.lockfile.exists():
-#                 if max_lock_time is not None and self.lockfile.exists():
-                    try:
-                        kill_lock = False
-                        try:
-                            with self.lockfile.open('r') as fid:
-                                info = json.load(fid)
-                        except:
-                            continue
-                        if self._testing:
-                            # This is only for tests, to be able to kill the process
-                            time.sleep(1)
-                        if 'free_after' in info and int(info['free_after']) > 0 \
-                        and int(info['free_after']) < time.time():
-                            # We free the original process by deleting the lockfile
-                            # and then we go to the next step in the while loop.
-                            # Note that this does not necessarily imply this process
-                            # gets to use the file; which is the intended behaviour
-                            # (first one wins).
-                            kill_lock = True
-                        if kill_lock:
-                            self.lockfile.unlink()
-                            self._print_debug("init",f"freed {self.lockfile} because "
-                                                + "of exceeding max_lock_time")
-                    except FileNotFoundError:
-                        # All is fine, the lockfile disappeared in the meanwhile.
-                        # Return to the while loop.
-                        continue
+#                 if self.lockfile.exists():
+# #                 if max_lock_time is not None and self.lockfile.exists():
+#                     try:
+#                         kill_lock = False
+#                         try:
+#                             with self.lockfile.open('r') as fid:
+#                                 info = json.load(fid)
+#                         except:
+#                             continue
+#                         if self._testing:
+#                             # This is only for tests, to be able to kill the process
+#                             time.sleep(1)
+#                         if 'free_after' in info and int(info['free_after']) > 0 \
+#                         and int(info['free_after']) < time.time():
+#                             # We free the original process by deleting the lockfile
+#                             # and then we go to the next step in the while loop.
+#                             # Note that this does not necessarily imply this process
+#                             # gets to use the file; which is the intended behaviour
+#                             # (first one wins).
+#                             kill_lock = True
+#                         if kill_lock:
+#                             self.lockfile.unlink()
+#                             self._print_debug("init",f"freed {self.lockfile} because "
+#                                                 + "of exceeding max_lock_time")
+#                     except FileNotFoundError:
+#                         # All is fine, the lockfile disappeared in the meanwhile.
+#                         # Return to the while loop.
+#                         continue
                 continue
 
             except FileNotFoundError:
