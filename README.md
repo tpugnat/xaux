@@ -158,6 +158,14 @@ The creation and submission of the jobs should a procedure similare to this one:
 ```Python
 from xaux import JobManager, DAJob
 
+# Submission parameters
+platform = 'htcondor'
+kwarg = {
+    "JobFlavor":"longlunch",                    # (optional) espresso, microcentury, longlunch, workday, tomorrow, testmatch, nextweek
+    "accounting_group":"group_u_BE.ABP.normal", # (optional)
+    "max_materialize":500,                      # (optional)
+}
+
 # Creation of the environment
 jm = JobManager(
     name="DA_Study",                        # Name of the study which will be used in htcondor;
@@ -194,17 +202,11 @@ job_description = {}
 jm.add(**job_description)
 
 # Submission of the jobs to htcondor
-platform = 'htcondor'
-kwarg = {
-    "JobFlavor":"longlunch",                    # (optional) espresso, microcentury, longlunch, workday, tomorrow, testmatch, nextweek
-    "accounting_group":"group_u_BE.ABP.normal", # (optional)
-    "max_materialize":500,                      # (optional)
-}
 jm.submit(
     platform=platform, # Platform to the jobs to. For now only htcondor is available
     job_list=None,     # (Optional) List of jobs to submit. If None, all jobs are submitted
     auto=True,         # (Optional) If True, the selected jobs will be submitted automatically, otherwise only the like for the submission will be printed
-    **kwarg            # List of usfull parameters for htcondor
+    **kwarg            # List of usefull parameters for htcondor
 )
 ```
 
@@ -212,15 +214,16 @@ Later, retriving availlable jobs and resubmit missing ones can be done following
 ```Python
 from xaux import JobManager
 
-# Loading of the environment
-meta_file = Path('.', 'DA_Study', 'htcondor', 'DA_Study.jobmanager.meta.json').resolve()
-jm = JobManager(meta_file)
-platform = 'htcondor'
+meta_file = './DA_Stud/htcondor/DA_Study.jobmanager.meta.json'
+platform  = 'htcondor'
 kwarg = {
     "JobFlavor":"longlunch",                    # (optional) espresso, microcentury, longlunch, workday, tomorrow, testmatch, nextweek
     "accounting_group":"group_u_BE.ABP.normal", # (optional)
     "max_materialize":500,                      # (optional)
 }
+
+# Loading of the environment
+jm = JobManager(meta_file)
 
 # Check jobs status
 jm.status(platform=platform, verbose=False) # Set verbose to True if you want to have the jobs status printed
@@ -229,16 +232,10 @@ jm.status(platform=platform, verbose=False) # Set verbose to True if you want to
 results = jm.retrieve(platform=platform)
 # `results` is a dict with the name of avalaible jobs as keys and dict with the various outputs as values
 # [ ... ]
-# Once all of them are handled accordingly, `JobManager` must be told that it can clean those jobs
+# Once all of them are handled accordingly, `JobManager` must be told that those jobs can be cleaned
 jm.set_jobs_ready_to_be_removed(job_list=list(results.keys()))
-jm.save_job_list()
 jm.clean(platform=platform)
 
 # Re-Submit of remaining jobs
-jm.submit(
-    platform=platform, # Platform to the jobs to. For now only htcondor is available
-    job_list=None,     # (Optional) List of jobs to submit. If None, all jobs are submitted
-    auto=True,         # (Optional) If True, the selected jobs will be submitted automatically, otherwise only the like for the submission will be printed
-    **kwarg            # List of usfull parameters for htcondor
-)
+jm.submit(platform=platform, auto=True, **kwarg)
 ```

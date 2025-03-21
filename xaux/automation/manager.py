@@ -702,10 +702,10 @@ class JobManager:
             print(f"Missing results for the following jobs: {missing_results}")
         return results
 
-    def set_jobs_ready_to_be_removed(self, job_list=None, **kwarg):
+    def set_jobs_ready_to_be_removed(self, job_list: list, **kwarg):
         self.read_job_list()
-        if job_list is None:
-            job_list = self._job_list.keys()
+        # if job_list is None:
+        #     job_list = self._job_list.keys()
         # Check if the job list is valid
         job_list = [job_name for job_name in job_list if job_name in self._job_list]
         # Set jobs ready to be removed
