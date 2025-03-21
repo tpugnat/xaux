@@ -711,6 +711,7 @@ class JobManager:
         # Set jobs ready to be removed
         for job_name in job_list:
             self._job_list[job_name][3] = True
+        self.save_job_list()
 
     def _retrieve_boinc(self, job_list=None, **kwarg):
         raise NotImplementedError("BOINC retrieval not implemented yet!")

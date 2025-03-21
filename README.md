@@ -176,16 +176,20 @@ job_description = {}
 # Example:
 #     job_description = {
 #         'seed1-1':{
-#             'inputfiles':{'line':line, 'particles':part1-1}, 'parameters':{'num_turns':1e5, 'seed':1}, 'outputfiles':{'output_file':'final_particles.parquet'}
+#             'inputfiles':{'line':"line.json", 'particles':part1-1}, 'parameters':{'num_turns':1e5, 'seed':1}, 
+#             'outputfiles':{'output_file':'final_particles.parquet'}
 #         },
 #         'seed1-2':{{
-#             'inputfiles':{'line':line, 'particles':part1-2}, 'parameters':{'num_turns':1e5, 'seed':1}, 'outputfiles':{'output_file':'final_particles.parquet'}
+#             'inputfiles':{'line':"line.json", 'particles':part1-2}, 'parameters':{'num_turns':1e5, 'seed':1}, 
+#             'outputfiles':{'output_file':'final_particles.parquet'}
 #         },
 #         'seed2-1':{
-#             'inputfiles':{'line':line, 'particles':part1-1}, 'parameters':{'num_turns':1e5, 'seed':2}, 'outputfiles':{'output_file':'final_particles.parquet'}
+#             'inputfiles':{'line':"line.json", 'particles':part1-1}, 'parameters':{'num_turns':1e5, 'seed':2},
+#             'outputfiles':{'output_file':'final_particles.parquet'}
 #         },
 #         'seed2-2':{{
-#             'inputfiles':{'line':line, 'particles':part1-2}, 'parameters':{'num_turns':1e5, 'seed':2}, 'outputfiles':{'output_file':'final_particles.parquet'}
+#             'inputfiles':{'line':"line.json", 'particles':part1-2}, 'parameters':{'num_turns':1e5, 'seed':2}, 
+#             'outputfiles':{'output_file':'final_particles.parquet'}
 #         },
 jm.add(**job_description)
 
@@ -196,6 +200,41 @@ kwarg = {
     "accounting_group":"group_u_BE.ABP.normal", # (optional)
     "max_materialize":500,                      # (optional)
 }
+jm.submit(
+    platform=platform, # Platform to the jobs to. For now only htcondor is available
+    job_list=None,     # (Optional) List of jobs to submit. If None, all jobs are submitted
+    auto=True,         # (Optional) If True, the selected jobs will be submitted automatically, otherwise only the like for the submission will be printed
+    **kwarg            # List of usfull parameters for htcondor
+)
+```
+
+Later, retriving availlable jobs and resubmit missing ones can be done following:
+```Python
+from xaux import JobManager
+
+# Loading of the environment
+meta_file = Path('.', 'DA_Study', 'htcondor', 'DA_Study.jobmanager.meta.json').resolve()
+jm = JobManager(meta_file)
+platform = 'htcondor'
+kwarg = {
+    "JobFlavor":"longlunch",                    # (optional) espresso, microcentury, longlunch, workday, tomorrow, testmatch, nextweek
+    "accounting_group":"group_u_BE.ABP.normal", # (optional)
+    "max_materialize":500,                      # (optional)
+}
+
+# Check jobs status
+jm.status(platform=platform, verbose=False) # Set verbose to True if you want to have the jobs status printed
+
+# Retrive the output results in the form of files for each available jobs
+results = jm.retrieve(platform=platform)
+# `results` is a dict with the name of avalaible jobs as keys and dict with the various outputs as values
+# [ ... ]
+# Once all of them are handled accordingly, `JobManager` must be told that it can clean those jobs
+jm.set_jobs_ready_to_be_removed(job_list=list(results.keys()))
+jm.save_job_list()
+jm.clean(platform=platform)
+
+# Re-Submit of remaining jobs
 jm.submit(
     platform=platform, # Platform to the jobs to. For now only htcondor is available
     job_list=None,     # (Optional) List of jobs to submit. If None, all jobs are submitted
