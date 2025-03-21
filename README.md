@@ -149,3 +149,57 @@ Then there are also a few tools to get info about a function's arguments, which 
 These are tools used for the maintenance and deployment of python packages. They are not in the test suite, and only accessible via `xaux.dev_tools`. The low-level functionality is a set of wrappers around `gh` (GitHub CLI), `git`, and `poetry`, while the higher-level functions are `make_release`, `make_release_branch`, `rename_release_branch` which are tailored to Xsuite and go through the same sequence of steps (verifying the release version number, making a PR to main, accepting it, publishing to PyPi, and making draft release notes on GitHub), while asserting the local workspace is clean and asking confirmation at each step. These are currently used as the default tools to maintain and deploy `xaux`, `xboinc`, `xcoll`, and `xdyna`.
 
 Finally, there are also some tools that wrap around `pip` and the `PyPi` API to get available package versions and make temporary installations of a specific package version from within python.
+
+
+### Job Manager and script description
+In order to facilitate the job submission to htcondor, a Job Manager and scripts have been created. The goal was to have a template that can be freely costumised for various type of studies.
+
+The creation and submission of the jobs should a procedure similare to this one:
+```Python
+from xaux import JobManager, DAJob
+
+# Creation of the environment
+jm = JobManager(
+    name="DA_Study",                        # Name of the study which will be used in htcondor;
+    work_directory="./DA_Study/htcondor/",  # Path to the directory where the meta file and various files usefull for the job manager are stored;
+    job_class=DAJob,                        # Class used on the nodes by the jobs;
+    input_directory="./DA_Study/inputs/",   # (Optional) This path can be used as default for the jobs input files;
+    output_directory="./DA_Study/outputs/", # (Optional) This path will be were jobs output files are stored.
+)
+
+# Creation of the various jobs to be submitted to htcondor
+job_description = {}
+# `job_description` is a dict which contains the description of each jobs. Each job description can contains the following keys:
+#     - `inputfiles`: a dict with the variable name as keys and either path to input files or data as value
+#     - `parameters`: a dict with keys the variable name and its value as value
+#     - `outputfiles`: a dict with keys the variable name and the output files to move into output_directory at the end
+# Example:
+#     job_description = {
+#         'seed1-1':{
+#             'inputfiles':{'line':line, 'particles':part1-1}, 'parameters':{'num_turns':1e5, 'seed':1}, 'outputfiles':{'output_file':'final_particles.parquet'}
+#         },
+#         'seed1-2':{{
+#             'inputfiles':{'line':line, 'particles':part1-2}, 'parameters':{'num_turns':1e5, 'seed':1}, 'outputfiles':{'output_file':'final_particles.parquet'}
+#         },
+#         'seed2-1':{
+#             'inputfiles':{'line':line, 'particles':part1-1}, 'parameters':{'num_turns':1e5, 'seed':2}, 'outputfiles':{'output_file':'final_particles.parquet'}
+#         },
+#         'seed2-2':{{
+#             'inputfiles':{'line':line, 'particles':part1-2}, 'parameters':{'num_turns':1e5, 'seed':2}, 'outputfiles':{'output_file':'final_particles.parquet'}
+#         },
+jm.add(**job_description)
+
+# Submission of the jobs to htcondor
+platform = 'htcondor'
+kwarg = {
+    "JobFlavor":"longlunch",                    # (optional) espresso, microcentury, longlunch, workday, tomorrow, testmatch, nextweek
+    "accounting_group":"group_u_BE.ABP.normal", # (optional)
+    "max_materialize":500,                      # (optional)
+}
+jm.submit(
+    platform=platform, # Platform to the jobs to. For now only htcondor is available
+    job_list=None,     # (Optional) List of jobs to submit. If None, all jobs are submitted
+    auto=True,         # (Optional) If True, the selected jobs will be submitted automatically, otherwise only the like for the submission will be printed
+    **kwarg            # List of usfull parameters for htcondor
+)
+```
